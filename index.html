@@ -377,34 +377,20 @@
     color: #000;
     padding: 0;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: stretch;
-    justify-content: stretch;
+    justify-content: center;
   }
 
   .manifesto-text-col {
-    flex: 1 1 55%;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    padding: 120px 6vw 60px 8vw;
-  }
-
-  .manifesto-photo-col {
-    flex: 1 1 45%;
-    position: relative;
-    overflow: hidden;
-    background: #ece6dd;
-  }
-
-  .manifesto-photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center center;
-    image-rendering: -webkit-optimize-contrast;
-    filter: contrast(1.03) saturate(0.96);
-    display: block;
+    padding: 100px 8vw 60px;
+    overflow-y: auto;
   }
 
   .manifesto-label {
@@ -412,17 +398,18 @@
     letter-spacing: 0.4em;
     text-transform: uppercase;
     color: #888;
-    margin-bottom: 56px;
+    margin-bottom: 24px;
   }
 
   .manifesto-text {
     font-family: 'Cormorant Garamond', serif;
-    font-weight: 300;
-    font-size: clamp(24px, 2.5vw, 42px);
-    line-height: 1.3;
+    font-weight: 400;
+    font-size: clamp(18px, 1.6vw, 24px);
+    line-height: 1.4;
     letter-spacing: -0.005em;
     color: #000;
     max-width: 720px;
+    margin: 0;
   }
 
   .manifesto-text em {
@@ -430,40 +417,70 @@
     color: #555;
   }
 
+  .manifesto-divider {
+    width: 60px;
+    height: 1px;
+    background: rgba(0,0,0,0.3);
+    margin: 36px 0 26px;
+  }
+
+  .symptoms-label {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: #888;
+    margin-bottom: 16px;
+  }
+
+  .symptoms-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 22px;
+    max-width: 720px;
+  }
+
+  .symptoms-list li {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: clamp(18px, 1.6vw, 24px);
+    line-height: 1.4;
+    color: #1a1a1a;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  .symptoms-list li:first-child { padding-top: 0; }
+  .symptoms-list li:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .symptoms-conclusion {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    font-size: clamp(18px, 1.6vw, 24px);
+    line-height: 1.4;
+    color: #000;
+    margin-top: 14px;
+    max-width: 720px;
+  }
+
+  .symptoms-conclusion em {
+    font-style: italic;
+    font-weight: 500;
+    color: #000;
+  }
+
   @media (max-width: 900px) {
-    .page-manifesto {
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: stretch;
-      padding: 0;
-    }
-    .manifesto-photo-col {
-      order: -1;
-      flex: 0 0 auto;
-      width: 70%;
-      max-width: 360px;
-      aspect-ratio: 3 / 4;
-      margin: 88px auto 24px;
-      background: #ece6dd;
-    }
     .manifesto-text-col {
-      flex: 0 0 auto;
-      padding: 0 24px 60px;
-      text-align: center;
-      align-items: center;
+      padding: 80px 24px 40px;
     }
-    .manifesto-label {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-    .manifesto-text {
-      font-size: clamp(15px, 4.2vw, 22px);
+    .manifesto-text,
+    .symptoms-list li,
+    .symptoms-conclusion {
+      font-size: clamp(16px, 3.4vw, 20px);
       line-height: 1.4;
-      max-width: 520px;
-      margin: 0 auto;
-      text-align: center;
     }
-    .manifesto-text br + br { display: none; }
+    .symptoms-list li {
+      padding: 8px 0;
+    }
   }
 
   .manifesto-signature {
@@ -1432,9 +1449,9 @@
   <ul class="nav-menu">
     <li class="nav-item active" data-page="0">Home</li>
     <li class="nav-item" data-page="1">Manifest</li>
-    <li class="nav-item" data-page="2">Brief</li>
+    <li class="nav-item" data-page="2">Portfolio</li>
     <li class="nav-item" data-page="3">Services</li>
-    <li class="nav-item" data-page="4">Portfolio</li>
+    <li class="nav-item" data-page="4">Brief</li>
     <li class="nav-item" data-page="5">Contact</li>
   </ul>
   <button class="nav-toggle" id="navToggle">Menu</button>
@@ -1444,14 +1461,13 @@
   <button class="mobile-close" id="mobileClose">Close</button>
   <div class="nav-item" data-page="0">Home</div>
   <div class="nav-item" data-page="1">Manifest</div>
-  <div class="nav-item" data-page="2">Brief</div>
+  <div class="nav-item" data-page="2">Portfolio</div>
   <div class="nav-item" data-page="3">Services</div>
-  <div class="nav-item" data-page="4">Portfolio</div>
+  <div class="nav-item" data-page="4">Brief</div>
   <div class="nav-item" data-page="5">Contact</div>
 </div>
 
 <div class="scroll-hint">Scroll · Swipe · ↓</div>
-<div class="page-counter"><span id="currentPage">01</span> / 06</div>
 
 <div class="pages" id="pages">
 
@@ -1471,7 +1487,7 @@
       <p class="hero-tagline">Визуал · Подача · История · Атмосфера · Tone of Voice · Социальное доказательство · Эмоция</p>
       <div class="hero-bottom">
         <div class="hero-bottom-left">A campaign by A.T.</div>
-        <div class="hero-bottom-right">Scroll · 01 / 06</div>
+        <div class="hero-bottom-right">Scroll</div>
       </div>
     </div>
   </section>
@@ -1479,48 +1495,58 @@
   <!-- PAGE 2 — MANIFESTO -->
   <section class="page page-manifesto" data-index="1">
     <div class="manifesto-text-col">
-      <div class="manifesto-label">01 / Manifest</div>
+      <div class="symptoms-label">Симптомы</div>
+      <ul class="symptoms-list">
+        <li>Клиент выбирает вас по цене, а не по уровню бренда</li>
+        <li>Продажи проседают без акций, скидок и сезонного спроса</li>
+        <li>Визуально компания не отличается от десятков похожих на рынке</li>
+        <li>Партнёры не запоминают ваш бренд и не возвращаются с клиентами</li>
+        <li>Подача продукта не объясняет, почему вы стоите дороже</li>
+        <li>Сайт и визуал не создают ощущения премиального сервиса до первого контакта</li>
+        <li>Качество работы выше, чем ощущение от бренда</li>
+        <li>Клиенты не считывают уровень компании до разговора с вами</li>
+      </ul>
+      <p class="symptoms-conclusion">
+        Всё это — симптомы одной проблемы: <em>бренд не построен как система</em>.
+      </p>
+      <div class="manifesto-divider"></div>
+      <div class="manifesto-label">Manifest</div>
       <p class="manifesto-text">
         Самый короткий путь к продаже — <em>эмоции</em> покупателя.<br><br>
         Покупают не только продукт. Покупают <em>вкус, атмосферу</em> и ощущение бренда.<br><br>
         Я создаю визуальные системы, которые делают бренд узнаваемым, цельным и желанным.
       </p>
     </div>
-    <div class="manifesto-photo-col" aria-hidden="true">
-      <video class="manifesto-photo" src="manifest.mp4" autoplay muted loop playsinline preload="metadata" poster="manifest.jpg"></video>
-    </div>
   </section>
 
-  <!-- PAGE 3 — BRIEF (Questions for the owner) -->
-  <section class="page page-brief" data-index="2">
-    <div class="brief-header">
-      <div class="brief-eyebrow">02 / Brief</div>
-      <p class="brief-intro">Задайте себе эти вопросы о вашем деле и поймите вместе со мной на консультации, где бренд <em>теряет стоимость</em>.</p>
+  <!-- PAGE 3 — PORTFOLIO -->
+  <section class="page page-experience" data-index="2">
+    <div class="exp-header">
+      <div class="exp-eyebrow">Portfolio</div>
     </div>
-    <div class="brief-list">
-      <div class="brief-item"><span class="brief-num">01</span><span class="brief-text">Есть ли план фин-модели?</span></div>
-      <div class="brief-item"><span class="brief-num">02</span><span class="brief-text">Где в вашем бренде хайп, а где настоящая боль покупателя?</span></div>
-      <div class="brief-item"><span class="brief-num">03</span><span class="brief-text">Кто отвечает за исполнение идеи?</span></div>
-      <div class="brief-item"><span class="brief-num">04</span><span class="brief-text">Какой принцип масштабирования применяется в вашей компании?</span></div>
-      <div class="brief-item"><span class="brief-num">05</span><span class="brief-text">Какое окружение у вашего бренда?</span></div>
-      <div class="brief-item"><span class="brief-num">06</span><span class="brief-text">Сколько лет проживёт ваш бренд?</span></div>
-      <div class="brief-item"><span class="brief-num">07</span><span class="brief-text">Кто будет им управлять?</span></div>
-      <div class="brief-item"><span class="brief-num">08</span><span class="brief-text">Кто будет представлять бренд?</span></div>
-      <div class="brief-item"><span class="brief-num">09</span><span class="brief-text">Какая репутация у вашего бренда?</span></div>
-      <div class="brief-item"><span class="brief-num">10</span><span class="brief-text">Как быстро идёт процесс согласования внутри и снаружи в вашем деле?</span></div>
-      <div class="brief-item"><span class="brief-num">11</span><span class="brief-text">Просят ли у вас скидку? Как обычно это происходит?</span></div>
-      <div class="brief-item"><span class="brief-num">12</span><span class="brief-text">Ваш бренд — цельная система восприятия? Почему?</span></div>
+    <div class="exp-grid">
+      <div class="exp-item">
+        <div class="exp-cat">Brand Building</div>
+        <h3 class="exp-name"><a href="https://instagram.com/alexeytiskin" target="_blank" rel="noopener" class="exp-link">alexeytiskin</a></h3>
+        <p class="exp-detail">Создание бренда с нуля: позиционирование, визуальная система, коммуникация, продвижение, продажи. Визуальная система в запрещённой сети META.</p>
+      </div>
+      <div class="exp-item">
+        <div class="exp-cat">Furniture Aesthetics</div>
+        <h3 class="exp-name"><a href="https://ambraa.ru" target="_blank" rel="noopener" class="exp-link">AMBRAA.RU</a></h3>
+        <p class="exp-detail">Создание MVP через понимание производственных процессов. Прибыль на первом же заказе.</p>
+      </div>
+      <div class="exp-item">
+        <div class="exp-cat">Jewelery</div>
+        <h3 class="exp-name"><a href="https://joyatelier.ru/" target="_blank" rel="noopener" class="exp-link">JOY ATELIER JEWELERY</a></h3>
+        <p class="exp-detail">Быстрое создание визуала, концепция продвижения.</p>
+      </div>
     </div>
-    <div class="brief-cta">
-      <button type="button" class="brief-cta-button" data-modal-trigger="Заявка: Получить консультацию">Получить консультацию</button>
-    </div>
-    <div class="brief-stamp" aria-hidden="true">NERO·21</div>
   </section>
 
   <!-- PAGE 4 — SERVICES -->
   <section class="page page-services" data-index="3">
     <div class="services-header">
-      <div class="services-eyebrow">03 / Services</div>
+      <div class="services-eyebrow">Services</div>
     </div>
     <div class="services-grid">
       <div class="service-cell">
@@ -1550,37 +1576,37 @@
     </div>
   </section>
 
-  <!-- PAGE 4 — PORTFOLIO -->
-  <section class="page page-experience" data-index="4">
-    <div class="exp-header">
-      <div class="exp-eyebrow">04 / Portfolio</div>
+  <!-- PAGE 5 — BRIEF (Questions for the owner) -->
+  <section class="page page-brief" data-index="4">
+    <div class="brief-header">
+      <div class="brief-eyebrow">Brief</div>
+      <p class="brief-intro">Задайте себе эти вопросы о вашем деле и поймите вместе со мной на консультации, где бренд <em>теряет стоимость</em>.</p>
     </div>
-    <div class="exp-grid">
-      <div class="exp-item">
-        <div class="exp-cat">Brand Building</div>
-        <h3 class="exp-name"><a href="https://instagram.com/alexeytiskin" target="_blank" rel="noopener" class="exp-link">alexeytiskin</a></h3>
-        <p class="exp-detail">Создание бренда с нуля: позиционирование, визуальная система, коммуникация, продвижение, продажи. Визуальная система в запрещеннограме.</p>
-      </div>
-      <div class="exp-item">
-        <div class="exp-cat">Furniture Aesthetics</div>
-        <h3 class="exp-name"><a href="https://ambraa.ru" target="_blank" rel="noopener" class="exp-link">AMBRAA.RU</a></h3>
-        <p class="exp-detail">Создание MVP через понимание производственных процессов. Прибыль на первом же заказе.</p>
-      </div>
-      <div class="exp-item">
-        <div class="exp-cat">Jewelery</div>
-        <h3 class="exp-name"><a href="https://joyatelier.ru/" target="_blank" rel="noopener" class="exp-link">JOY ATELIER JEWELERY</a></h3>
-        <p class="exp-detail">Быстрое создание визуала, концепция продвижения.</p>
-      </div>
+    <div class="brief-list">
+      <div class="brief-item"><span class="brief-num">01</span><span class="brief-text">Есть ли план фин-модели?</span></div>
+      <div class="brief-item"><span class="brief-num">02</span><span class="brief-text">Где в вашем бренде хайп, а где настоящая боль покупателя?</span></div>
+      <div class="brief-item"><span class="brief-num">03</span><span class="brief-text">Кто отвечает за исполнение идеи?</span></div>
+      <div class="brief-item"><span class="brief-num">04</span><span class="brief-text">Какой принцип масштабирования применяется в вашей компании?</span></div>
+      <div class="brief-item"><span class="brief-num">05</span><span class="brief-text">Какое окружение у вашего бренда?</span></div>
+      <div class="brief-item"><span class="brief-num">06</span><span class="brief-text">Сколько лет проживёт ваш бренд?</span></div>
+      <div class="brief-item"><span class="brief-num">07</span><span class="brief-text">Кто будет им управлять?</span></div>
+      <div class="brief-item"><span class="brief-num">08</span><span class="brief-text">Кто будет представлять бренд?</span></div>
+      <div class="brief-item"><span class="brief-num">09</span><span class="brief-text">Какая репутация у вашего бренда?</span></div>
+      <div class="brief-item"><span class="brief-num">10</span><span class="brief-text">Как быстро идёт процесс согласования внутри и снаружи в вашем деле?</span></div>
+      <div class="brief-item"><span class="brief-num">11</span><span class="brief-text">Просят ли у вас скидку? Как обычно это происходит?</span></div>
+      <div class="brief-item"><span class="brief-num">12</span><span class="brief-text">Ваш бренд — цельная система восприятия? Почему?</span></div>
+    </div>
+    <div class="brief-cta">
+      <button type="button" class="brief-cta-button" data-modal-trigger="Заявка: Получить консультацию">Получить консультацию</button>
     </div>
   </section>
 
   <!-- PAGE 6 — CONTACT -->
   <section class="page page-contact" data-index="5">
-    <div class="contact-label">05 / Contact</div>
+    <div class="contact-label">Contact</div>
     <p class="contact-sub">For premium brand collaborations &amp; consultations</p>
     <div class="contact-links">
       <a class="contact-link" href="tel:+79312982216">+7 931 298 22 16</a>
-      <a class="contact-link" href="https://instagram.com/emphatic21" target="_blank" rel="noopener">Instagram · @emphatic21</a>
       <a class="contact-link" href="https://t.me/AnastasiiaT21" target="_blank" rel="noopener">Telegram · @AnastasiiaT21</a>
     </div>
     <div class="contact-cta">
@@ -1679,7 +1705,7 @@
   }
 
   function updateUI() {
-    counter.textContent = String(currentPage + 1).padStart(2, '0');
+    if (counter) counter.textContent = String(currentPage + 1).padStart(2, '0');
     navItems.forEach((item) => {
       const idx = parseInt(item.dataset.page, 10);
       if (idx === currentPage) item.classList.add('active');
@@ -1783,7 +1809,7 @@
     const phone = contactForm.elements.phone.value.trim();
     const tg = contactForm.elements.telegram.value.trim();
     const email = contactForm.elements.email.value.trim();
-    const source = modalEyebrow.textContent || 'Заявка с сайта';
+    const source = modalEyebrow.textContent || 'Заявка с сайта nero21';
 
     if (!phone && !tg && !email) {
       formStatus.textContent = 'Заполните хотя бы одно поле для связи.';
@@ -1791,20 +1817,40 @@
       return;
     }
 
-    const lines = [source, '', 'Заявка с сайта nero21:', ''];
-    if (phone) lines.push('Телефон: ' + phone);
-    if (tg) lines.push('Telegram: ' + tg);
-    if (email) lines.push('Email: ' + email);
+    formStatus.textContent = 'Отправка...';
+    formStatus.style.color = '#666';
 
-    const url = 'https://t.me/AnastasiiaT21?text=' + encodeURIComponent(lines.join('\n'));
-    window.open(url, '_blank', 'noopener');
+    const data = {
+      _subject: source,
+      _captcha: 'false',
+      _template: 'table',
+      Источник: source,
+      Телефон: phone || '—',
+      Telegram: tg || '—',
+      Email: email || '—'
+    };
 
-    formStatus.textContent = 'Спасибо! Откроется Telegram — отправьте сообщение, чтобы заявка дошла.';
-    formStatus.style.color = '#0a7a3a';
-    setTimeout(() => {
-      contactForm.reset();
-      closeModal();
-    }, 2000);
+    fetch('https://formsubmit.co/ajax/at@ambraa.ru', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(() => {
+      formStatus.textContent = 'Спасибо! Заявка получена, отвечу лично в течение дня.';
+      formStatus.style.color = '#0a7a3a';
+      setTimeout(() => {
+        contactForm.reset();
+        closeModal();
+      }, 2500);
+    })
+    .catch(() => {
+      formStatus.textContent = 'Ошибка отправки. Напишите мне в Telegram (выше).';
+      formStatus.style.color = '#a55';
+    });
   });
 </script>
 

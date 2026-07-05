@@ -6,32 +6,32 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://nero21.studio/#manifest</loc>
+    <loc>https://nero21.studio/manifest</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://nero21.studio/#portfolio</loc>
+    <loc>https://nero21.studio/portfolio</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://nero21.studio/#audit</loc>
+    <loc>https://nero21.studio/audit</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nero21.studio/#identity</loc>
+    <loc>https://nero21.studio/identity</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nero21.studio/#producing</loc>
+    <loc>https://nero21.studio/producing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://nero21.studio/#contact</loc>
+    <loc>https://nero21.studio/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

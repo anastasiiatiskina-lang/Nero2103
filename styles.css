@@ -560,9 +560,9 @@ body {
 .page-experience {
   background: #000;
   color: #fff;
-  flex-direction: column;
-  align-items: stretch;
   padding: 0;
+  display: block;
+  overflow-y: auto;
 }
 
 .exp-header {
@@ -1811,7 +1811,7 @@ body {
   .page-counter { right: 24px; bottom: 20px; font-size: 10px; }
   .scroll-hint { left: 24px; bottom: 20px; font-size: 9px; }
   .page { padding: 0 24px; }
-  .exp-grid { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 60px; }
+  .exp-grid { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 100px; }
   .exp-header { padding: 100px 24px 40px; }
   .nav-toggle { display: block; }
 }

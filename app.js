@@ -311,7 +311,7 @@
     }
   });
 
-  // Inject "next page" button at the bottom of each page (visible on mobile via CSS)
+  // Inject "next page" arrow at the bottom of each page (visible on mobile via CSS)
   (function injectNextPageButtons() {
     var pageLabels = ['Главная', 'Манифест', 'Работы', 'Диагностика', 'Сайты', 'Стиль', 'Полный цикл', 'Контакты'];
     for (var i = 0; i < pages.length - 1; i++) {
@@ -321,8 +321,8 @@
         var btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'page-next-btn';
-        btn.setAttribute('aria-label', 'Перейти к разделу ' + pageLabels[idx + 1]);
-        btn.innerHTML = 'Дальше · ' + pageLabels[idx + 1] + '<span class="page-next-arrow" aria-hidden="true"> ↓</span>';
+        btn.setAttribute('aria-label', 'Дальше: ' + pageLabels[idx + 1]);
+        btn.innerHTML = '<span class="page-next-label">Дальше: ' + pageLabels[idx + 1] + '</span><span aria-hidden="true">→</span>';
         btn.addEventListener('click', function () {
           goToPage(idx + 1);
         });

@@ -355,15 +355,27 @@
     // Note: Space key removed from navigation. It should activate focused button, not scroll page.
   });
 
-  // Touch navigation
+  // Touch navigation with internal scroll priority
   var touchStartY = 0;
   window.addEventListener('touchstart', function (e) {
     touchStartY = e.changedTouches[0].screenY;
   }, { passive: true });
   window.addEventListener('touchend', function (e) {
     if (document.body.classList.contains('modal-open')) return;
+    if (isTransitioning) return;
     var diff = touchStartY - e.changedTouches[0].screenY;
-    if (Math.abs(diff) < 50) return;
+    if (Math.abs(diff) < 80) return;
+
+    // If current page has internal scroll and user is not at edge, let the page scroll normally
+    var currentEl = pages[currentPage];
+    if (currentEl && currentEl.scrollHeight > currentEl.clientHeight + 1) {
+      var atTop = currentEl.scrollTop <= 0;
+      var atBottom = currentEl.scrollTop + currentEl.clientHeight >= currentEl.scrollHeight - 1;
+      if ((diff > 0 && !atBottom) || (diff < 0 && !atTop)) {
+        return;
+      }
+    }
+
     if (diff > 0) goToPage(currentPage + 1);
     else goToPage(currentPage - 1);
   }, { passive: true });

@@ -213,5 +213,26 @@ img{display:block;max-width:100%;height:auto}
   <div class="foot-copy">&copy; Alexey Tiskin &middot; &#1057;&#1072;&#1085;&#1082;&#1090;-&#1055;&#1077;&#1090;&#1077;&#1088;&#1073;&#1091;&#1088;&#1075;</div>
 </footer>
 
+<script>
+(function(){
+  var v = document.getElementById('heroVid');
+  if (!v) return;
+  function tryPlay(){
+    var p = v.play();
+    if (p && p.catch) p.catch(function(){});
+  }
+  if (v.readyState >= 2) tryPlay();
+  v.addEventListener('loadedmetadata', tryPlay);
+  v.addEventListener('canplay', tryPlay);
+  // Fallback: first user touch triggers play across all videos
+  var onTouch = function(){
+    tryPlay();
+    document.removeEventListener('touchstart', onTouch);
+    document.removeEventListener('click', onTouch);
+  };
+  document.addEventListener('touchstart', onTouch, {passive: true});
+  document.addEventListener('click', onTouch, {passive: true});
+})();
+</script>
 </body>
 </html>

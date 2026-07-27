@@ -27,7 +27,9 @@ a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 img{display:block;max-width:100%;height:auto}
 
-.btn,.btn-dark{display:inline-block;padding:11px 18px;font-family:var(--sans);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;transition:all var(--dur) var(--ease);cursor:pointer;background:transparent;text-align:center;line-height:1;border:1px solid currentColor;font-weight:400}
+.btn,.btn-dark,.btn-filled{display:inline-block;padding:11px 18px;font-family:var(--sans);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;transition:all var(--dur) var(--ease);cursor:pointer;background:transparent;text-align:center;line-height:1;border:1px solid currentColor;font-weight:400}
+.btn-filled{background:var(--ink);color:#FFFFFF;border-color:var(--ink)}
+.btn-filled:hover{background:transparent;color:var(--ink)}
 .btn{color:#FFFFFF}
 .btn:hover{background:#FFFFFF;color:var(--ink)}
 .btn-dark{color:var(--ink)}
@@ -265,9 +267,9 @@ img{display:block;max-width:100%;height:auto}
 
 <section class="sec">
   <div class="sec-head stack">
-    <p class="sec-quote">«Я хочу оставаться собой — в своей уникальности, женственности и комфорте. Но мне либо неудобно в явно вычурном белье, либо эмоционально некомфортно, что я снова в спортивном топике».</p>
+    <p class="sec-quote">«Я хочу оставаться собой — в своей уникальности, женственности и комфорте».</p>
     <p class="sec-sub">В Vescent женщина всегда остаётся многогранной особой и сохраняет комфорт.</p>
-    <div style="text-align:center;margin-top:12px"><a class="btn-dark" href="#catalog">Каталог</a></div>
+    <div style="text-align:center;margin-top:16px"><a class="btn-filled" href="#catalog">Каталог</a></div>
   </div>
   <div class="cat-grid">
     <a class="cat" href="#">
@@ -350,7 +352,7 @@ img{display:block;max-width:100%;height:auto}
 <section class="news">
   <div class="news-in">
     <p class="news-title">Первыми узнавать о новом</p>
-    <p class="news-sub">Подпишись — скидка 15% на первый заказ и приглашение на закрытые предпоказы.</p>
+    <p class="news-sub">Мы пишем письма, которые хочется открывать. О новом, о важном, о тебе. Будь первой, кто их получит.</p>
     <form class="news-form" onsubmit="return false;">
       <input class="news-input" type="email" placeholder="Ваш email" required>
       <button type="submit" class="btn-dark">Подписаться</button>

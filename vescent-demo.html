@@ -119,6 +119,9 @@ img{display:block;max-width:100%;height:auto}
 .news-title{font-family:var(--serif);font-variation-settings:"opsz" 144,"SOFT" 40;font-weight:400;font-style:italic;font-size:clamp(22px,2.2vw,30px);line-height:1.2;color:var(--ink);margin:0 0 12px}
 .news-sub{font-family:var(--sans);font-weight:300;font-size:13px;color:var(--dim);margin:0 0 28px;line-height:1.5}
 .news-form{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.news-consent{font-family:var(--sans);font-weight:300;font-size:11px;color:var(--dim);line-height:1.55;max-width:640px;margin:18px auto 0;text-align:center}
+.news-consent a{color:var(--ink);border-bottom:1px solid rgba(26,22,20,0.35);transition:border-color var(--dur) var(--ease)}
+.news-consent a:hover{border-bottom-color:var(--ink)}
 .news-input{flex:1 1 220px;max-width:280px;padding:12px 14px;font-family:var(--sans);font-size:13px;background:transparent;border:1px solid rgba(26,22,20,0.25);color:var(--ink);outline:none;transition:border-color var(--dur) var(--ease)}
 .news-input:focus{border-color:var(--ink)}
 
@@ -355,9 +358,10 @@ img{display:block;max-width:100%;height:auto}
     <p class="news-title">Первыми узнавать о новом</p>
     <p class="news-sub">Мы пишем письма, которые хочется открывать. О новом, о важном, о тебе. Будь первой, кто их получит.</p>
     <form class="news-form" onsubmit="return false;">
-      <input class="news-input" type="email" placeholder="Ваш email" required>
+      <input class="news-input" type="email" placeholder="Мы пишем письма, которые хочется открывать. О новом, о важном, о тебе. Будь первой, кто их получит" required>
       <button type="submit" class="btn-dark">Подписаться</button>
     </form>
+    <p class="news-consent">Нажимая на кнопку «Подписаться», вы подтверждаете, что ознакомились с <a href="/privacy">политикой конфиденциальности</a>, и даёте <a href="/consent">согласие на получение рассылки</a>, в том числе рекламной.</p>
   </div>
 </section>
 

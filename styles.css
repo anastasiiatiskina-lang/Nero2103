@@ -1328,7 +1328,10 @@ body {
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
+  padding: 64px 24px 130px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-menu.open {
@@ -1337,8 +1340,18 @@ body {
 
 .mobile-menu .nav-item {
   font-family: 'Playfair Display', 'Cormorant Garamond', serif;
-  font-size: 32px;
+  font-size: clamp(20px, 5.5vw, 30px);
   letter-spacing: 0.1em;
+}
+
+@media (max-height: 780px) {
+  .mobile-menu { gap: 20px; padding-bottom: 118px; }
+  .mobile-menu .nav-item { font-size: clamp(18px, 4.8vw, 26px); }
+}
+
+@media (max-height: 640px) {
+  .mobile-menu { gap: 14px; padding-bottom: 106px; }
+  .mobile-menu .nav-item { font-size: 18px; letter-spacing: 0.08em; }
 }
 
 .mobile-close {

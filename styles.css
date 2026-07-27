@@ -216,15 +216,45 @@ body {
 .scroll-hint {
   position: fixed;
   bottom: 32px;
-  left: 48px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
-  font-size: 10px;
-  letter-spacing: 0.3em;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.32em;
   text-transform: uppercase;
   color: #fff;
   mix-blend-mode: difference;
-  opacity: 0.6;
-  animation: pulse 2.5s ease-in-out infinite;
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  animation: scrollHintPulse 2.4s ease-in-out infinite;
+}
+
+.scroll-hint .sh-arrow {
+  display: inline-block;
+  font-size: 13px;
+  animation: scrollHintArrow 2.4s ease-in-out infinite;
+}
+
+.scroll-hint.hidden {
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  animation: none;
+}
+
+@keyframes scrollHintPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+
+@keyframes scrollHintArrow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(4px); }
 }
 
 @keyframes pulse {
@@ -1822,7 +1852,8 @@ body {
   .nav-menu { gap: 20px; display: none; }
   .nav-item { font-size: 9px; }
   .page-counter { right: 24px; bottom: 20px; font-size: 10px; }
-  .scroll-hint { left: 24px; bottom: 20px; font-size: 9px; }
+  .scroll-hint { bottom: 20px; font-size: 9px; letter-spacing: 0.28em; gap: 8px; }
+  .scroll-hint .sh-arrow { font-size: 12px; }
   .page { padding: 0 24px; }
   .exp-grid { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 100px; }
   .exp-header { padding: 100px 24px 40px; }

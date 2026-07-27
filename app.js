@@ -136,6 +136,10 @@
 
   function updateUI() {
     if (counter) counter.textContent = String(currentPage + 1).padStart(2, '0');
+    var hint = document.getElementById('scrollHint');
+    if (hint && currentPage > 0 && !hint.classList.contains('hidden')) {
+      hint.classList.add('hidden');
+    }
     navItems.forEach(function (item) {
       var idx = parseInt(item.dataset.page, 10);
       if (idx === currentPage) {

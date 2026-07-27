@@ -73,6 +73,10 @@ img{display:block;max-width:100%;height:auto}
 .split.alt{grid-template-columns:minmax(440px,1.1fr) minmax(320px,1fr)}
 .split.alt .img{order:2}
 .split.alt .txt{order:1}
+@media(min-width:1025px){
+  .split.alt .img{aspect-ratio:3/2}
+  .split.alt .img img{width:100%;height:100%;object-fit:cover;object-position:center bottom}
+}
 .split .img{overflow:hidden;min-width:0}
 .split .img img{width:100%;height:auto;display:block;filter:grayscale(1) contrast(1.02)}
 .split .txt{min-width:0}

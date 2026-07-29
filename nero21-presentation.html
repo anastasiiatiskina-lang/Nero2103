@@ -255,7 +255,22 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 .btn-row.center{justify-content:center}
 
 /* ---------- обложка и финал ---------- */
-.cover h1{margin:0 auto}
+.cover-grid{
+  display:grid;grid-template-columns:minmax(0,0.72fr) minmax(0,1fr);
+  gap:clamp(32px,5vw,72px);align-items:center;
+}
+.cover-text{text-align:left}
+.cover h1{margin:0}
+/* Портрет: пропорции берутся из самого файла, кадр не режется */
+.portrait{position:relative;width:100%;max-width:460px;aspect-ratio:2/3;
+  overflow:hidden;background:#171717}
+.portrait img,.portrait canvas{
+  position:absolute;inset:0;width:100%;height:100%;display:block;
+}
+.portrait img{object-fit:cover}
+.portrait canvas{opacity:0;transition:opacity .35s ease;pointer-events:none}
+.portrait.fx-ready canvas{opacity:1}
+.portrait.fx-ready img{visibility:hidden}
 .cover .caption{
   font-size:12px;font-weight:200;letter-spacing:var(--track-label);
   text-transform:uppercase;color:var(--stone);margin-top:calc(var(--u)*6);
@@ -330,6 +345,9 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
   .nav a{font-size:clamp(22px,6.6vw,30px);line-height:1.9}
   .nav .nav-num{font-size:10px;margin-right:calc(var(--u)*1.5)}
 
+  .cover-grid{grid-template-columns:1fr;gap:calc(var(--u)*5);justify-items:center}
+  .cover-text{text-align:center}
+  .portrait{max-width:min(74vw,300px)}
   .foot{bottom:calc(var(--u)*2 + env(safe-area-inset-bottom));font-size:9px}
   .topbar .mark{font-size:9.5px}
 }
@@ -349,6 +367,8 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
     padding-bottom:calc(var(--u)*7)}
   h1{font-size:clamp(30px,6vw,46px)}
   h2{font-size:clamp(26px,5vw,38px)}
+  .cover-grid{grid-template-columns:0.6fr 1fr;gap:24px}
+  .portrait{max-width:150px}
   .nav{justify-content:flex-start;overflow-y:auto}
   .nav a{font-size:19px;line-height:1.75}
   .foot{position:static;margin-top:calc(var(--u)*4)}
@@ -388,10 +408,20 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 </nav>
 
 <section class="dark cover" id="cover">
-  <div class="inner center">
-    <p class="label reveal" style="margin-bottom:calc(var(--u)*5)">NERO 21 · Санкт-Петербург</p>
-    <h1 class="reveal"><span class="thin">Я не строю известность</span><br><span class="accent strong">Я строю стоимость</span></h1>
-    <p class="caption reveal">Продюсирование бренда</p>
+  <div class="inner cover-grid">
+    <figure class="portrait reveal">
+      <canvas id="portraitCanvas" aria-hidden="true"></canvas>
+      <img id="portraitSrc" src="tiskina-portrait-800.jpg"
+           srcset="tiskina-portrait-500.jpg 500w, tiskina-portrait-800.jpg 800w, tiskina-portrait-1000.jpg 1000w"
+           sizes="(max-width:720px) 74vw, 460px"
+           alt="Анастасия Тискина, основатель студии NERO 21"
+           width="1000" height="1500" fetchpriority="high" decoding="async">
+    </figure>
+    <div class="cover-text">
+      <p class="label reveal" style="margin-bottom:calc(var(--u)*5)">NERO 21 · Санкт-Петербург</p>
+      <h1 class="reveal"><span class="thin">Я не строю известность</span><br><span class="accent strong">Я строю стоимость</span></h1>
+      <p class="caption reveal">Продюсирование бренда</p>
+    </div>
   </div>
   <div class="foot">NERO 21 · Анастасия Тискина</div>
 </section>
@@ -570,6 +600,95 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
     el.style.transitionDelay=(Math.min(i%6,5)*60)+'ms';
     io.observe(el);
   });
+
+
+  /* ---------- Портрет: сетка-мозаика, следящая за курсором ----------
+     Каждая клетка рисует свой кусок фотографии. Рядом с курсором кусок
+     берётся меньше и растягивается на всю клетку — получается зум,
+     читающийся как крупный пиксель. Вдали зум равен единице, и клетка
+     совпадает с обычным изображением, поэтому стыков не видно.
+     Курсор сглаживается экспоненциально — тот же характер, что даёт
+     gsap.quickTo с ease "expo", но без внешней библиотеки. */
+  (function portraitMosaic(){
+    var fig=document.querySelector('.portrait');
+    var cv=document.getElementById('portraitCanvas');
+    var img=document.getElementById('portraitSrc');
+    if(!fig||!cv||!img) return;
+
+    var fine=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+    var calm=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!fine||calm) return;
+
+    var ctx=cv.getContext('2d',{alpha:false});
+    var BOX=170, ZOOM=4.2, REACH=1.15;
+    var W=0,H=0,dpr=1,cols=0,rows=0,cw=0,ch=0;
+    var px=-9999,py=-9999,tx=-9999,ty=-9999,raf=0,inside=false;
+
+    function measure(){
+      var r=fig.getBoundingClientRect();
+      if(!r.width) return false;
+      dpr=Math.min(window.devicePixelRatio||1,2);
+      W=r.width; H=r.height;
+      cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      cols=Math.max(1,Math.round(W/BOX)); rows=Math.max(1,Math.round(H/BOX));
+      cw=W/cols; ch=H/rows;
+      return true;
+    }
+
+    function cover(){
+      var ir=img.naturalWidth/img.naturalHeight, br=W/H, sw,sh,sx,sy;
+      if(ir>br){ sh=img.naturalHeight; sw=sh*br; sx=(img.naturalWidth-sw)/2; sy=0; }
+      else     { sw=img.naturalWidth;  sh=sw/br; sx=0; sy=(img.naturalHeight-sh)/2; }
+      return {sx:sx,sy:sy,sw:sw,sh:sh};
+    }
+
+    function draw(){
+      var c=cover(), reach=W*REACH;
+      ctx.fillStyle='#171717'; ctx.fillRect(0,0,W,H);
+      for(var j=0;j<rows;j++){
+        for(var i=0;i<cols;i++){
+          var x=i*cw, y=j*ch, mx=x+cw/2, my=y+ch/2;
+          var d=Math.hypot(mx-px,my-py);
+          var t=inside?Math.max(0,1-d/reach):0;
+          var z=1+(ZOOM-1)*t*t;
+          var sw=(cw/W)*c.sw/z, sh=(ch/H)*c.sh/z;
+          var scx=c.sx+(mx/W)*c.sw, scy=c.sy+(my/H)*c.sh;
+          ctx.drawImage(img,scx-sw/2,scy-sh/2,sw,sh,x,y,cw+0.5,ch+0.5);
+        }
+      }
+    }
+
+    function loop(){
+      px+=(tx-px)*0.14; py+=(ty-py)*0.14;
+      draw();
+      if(Math.abs(tx-px)>0.4||Math.abs(ty-py)>0.4) raf=requestAnimationFrame(loop);
+      else raf=0;
+    }
+    function kick(){ if(!raf) raf=requestAnimationFrame(loop); }
+
+    fig.addEventListener('pointermove',function(e){
+      var r=fig.getBoundingClientRect();
+      tx=e.clientX-r.left; ty=e.clientY-r.top;
+      if(!inside){ inside=true; px=tx; py=ty; }
+      kick();
+    });
+    fig.addEventListener('pointerleave',function(){
+      inside=false; tx=-9999; ty=-9999; kick();
+    });
+
+    function start(){
+      if(!measure()) return;
+      draw(); fig.classList.add('fx-ready');
+    }
+    if(img.complete&&img.naturalWidth) start();
+    else img.addEventListener('load',start,{once:true});
+
+    var rt;
+    window.addEventListener('resize',function(){
+      clearTimeout(rt); rt=setTimeout(function(){ if(measure()) draw(); },160);
+    });
+  })();
 
   function fmt(n){return n.toLocaleString('ru-RU').replace(/ /g,' ');}
   var co=new IntersectionObserver(function(entries){

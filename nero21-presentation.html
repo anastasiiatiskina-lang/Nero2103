@@ -263,7 +263,8 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 .cover h1{margin:0}
 /* Портрет: пропорции берутся из самого файла, кадр не режется */
 .portrait{position:relative;width:100%;max-width:460px;aspect-ratio:2/3;
-  overflow:hidden;background:#171717}
+  overflow:hidden;background:#171717;
+  touch-action:pan-y;-webkit-tap-highlight-color:transparent}
 .portrait img,.portrait canvas{
   position:absolute;inset:0;width:100%;height:100%;display:block;
 }
@@ -602,27 +603,26 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
   });
 
 
-  /* ---------- Портрет: сетка-мозаика, следящая за курсором ----------
-     Каждая клетка рисует свой кусок фотографии. Рядом с курсором кусок
+  /* ---------- Портрет: сетка-мозаика, следящая за курсором и пальцем ----
+     Каждая клетка рисует свой кусок фотографии. Рядом с указателем кусок
      берётся меньше и растягивается на всю клетку — получается зум,
      читающийся как крупный пиксель. Вдали зум равен единице, и клетка
      совпадает с обычным изображением, поэтому стыков не видно.
-     Курсор сглаживается экспоненциально — тот же характер, что даёт
+     Указатель сглаживается экспоненциально — тот же характер, что даёт
      gsap.quickTo с ease "expo", но без внешней библиотеки. */
   (function portraitMosaic(){
     var fig=document.querySelector('.portrait');
     var cv=document.getElementById('portraitCanvas');
     var img=document.getElementById('portraitSrc');
     if(!fig||!cv||!img) return;
-
-    var fine=window.matchMedia('(hover:hover) and (pointer:fine)').matches;
-    var calm=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if(!fine||calm) return;
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     var ctx=cv.getContext('2d',{alpha:false});
-    var BOX=170, ZOOM=4.2, REACH=1.15;
-    var W=0,H=0,dpr=1,cols=0,rows=0,cw=0,ch=0;
-    var px=-9999,py=-9999,tx=-9999,ty=-9999,raf=0,inside=false;
+    var ZOOM=4.2, REACH=1.15;
+    var W=0,H=0,dpr=1,cols=0,rows=0,cw=0,ch=0,box=170;
+    var px=0,py=0,tx=0,ty=0;      // положение указателя: сглаженное и целевое
+    var s=0,ts=0;                 // сила эффекта: сглаженная и целевая
+    var raf=0;
 
     function measure(){
       var r=fig.getBoundingClientRect();
@@ -631,7 +631,10 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
       W=r.width; H=r.height;
       cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
       ctx.setTransform(dpr,0,0,dpr,0,0);
-      cols=Math.max(1,Math.round(W/BOX)); rows=Math.max(1,Math.round(H/BOX));
+      // клетка подстраивается под ширину: на телефоне 170px дали бы два
+      // столбца — дробление читалось бы как обрезка, а не как приём
+      box=Math.max(84,Math.min(170,W/2.7));
+      cols=Math.max(1,Math.round(W/box)); rows=Math.max(1,Math.round(H/box));
       cw=W/cols; ch=H/rows;
       return true;
     }
@@ -650,7 +653,7 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
         for(var i=0;i<cols;i++){
           var x=i*cw, y=j*ch, mx=x+cw/2, my=y+ch/2;
           var d=Math.hypot(mx-px,my-py);
-          var t=inside?Math.max(0,1-d/reach):0;
+          var t=Math.max(0,1-d/reach)*s;
           var z=1+(ZOOM-1)*t*t;
           var sw=(cw/W)*c.sw/z, sh=(ch/H)*c.sh/z;
           var scx=c.sx+(mx/W)*c.sw, scy=c.sy+(my/H)*c.sh;
@@ -660,22 +663,45 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
     }
 
     function loop(){
-      px+=(tx-px)*0.14; py+=(ty-py)*0.14;
+      px+=(tx-px)*0.14; py+=(ty-py)*0.14; s+=(ts-s)*0.10;
       draw();
-      if(Math.abs(tx-px)>0.4||Math.abs(ty-py)>0.4) raf=requestAnimationFrame(loop);
-      else raf=0;
+      var moving=Math.abs(tx-px)>0.4||Math.abs(ty-py)>0.4||Math.abs(ts-s)>0.004;
+      raf=moving?requestAnimationFrame(loop):0;
+      if(!moving&&ts===0&&s<0.01){ s=0; draw(); }
     }
     function kick(){ if(!raf) raf=requestAnimationFrame(loop); }
 
-    fig.addEventListener('pointermove',function(e){
+    function at(e){
       var r=fig.getBoundingClientRect();
       tx=e.clientX-r.left; ty=e.clientY-r.top;
-      if(!inside){ inside=true; px=tx; py=ty; }
-      kick();
+    }
+    function engage(e){
+      at(e);
+      if(ts===0){ px=tx; py=ty; }   // без рывка из прошлой точки
+      ts=1; kick();
+    }
+    function release(){ ts=0; kick(); }
+
+    // мышь: эффект живёт, пока курсор над фото
+    fig.addEventListener('pointermove',function(e){
+      if(e.pointerType==='mouse') engage(e); else if(ts>0){ at(e); kick(); }
     });
-    fig.addEventListener('pointerleave',function(){
-      inside=false; tx=-9999; ty=-9999; kick();
+    fig.addEventListener('pointerleave',function(e){
+      if(e.pointerType==='mouse') release();
     });
+
+    // палец: ведём за касанием, прокрутку не перехватываем.
+    // touch-action:pan-y в CSS оставляет вертикальный свайп странице,
+    // поэтому preventDefault не нужен и скролл не ломается
+    fig.addEventListener('pointerdown',function(e){
+      if(e.pointerType!=='mouse') engage(e);
+    },{passive:true});
+    fig.addEventListener('pointerup',function(e){
+      if(e.pointerType!=='mouse') release();
+    },{passive:true});
+    fig.addEventListener('pointercancel',function(e){
+      if(e.pointerType!=='mouse') release();
+    },{passive:true});
 
     function start(){
       if(!measure()) return;

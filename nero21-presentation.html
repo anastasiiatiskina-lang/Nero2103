@@ -264,15 +264,25 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 /* Портрет: пропорции берутся из самого файла, кадр не режется */
 .portrait{position:relative;width:100%;max-width:460px;aspect-ratio:2/3;
   overflow:hidden;background:#171717;
-  touch-action:pan-y;-webkit-tap-highlight-color:transparent}
-.portrait img,.portrait canvas{
+  -webkit-tap-highlight-color:transparent}
+.portrait img{
   position:absolute;inset:0;width:100%;height:100%;display:block;
+  object-fit:cover;
 }
-.portrait img{object-fit:cover;z-index:0}
-/* холст лежит НАД фотографией и всплывает только на время взаимодействия:
-   в разметке он идёт первым, без z-index картинка перекрывала бы его */
-.portrait canvas{z-index:1;opacity:0;transition:opacity .28s ease;pointer-events:none}
-.portrait.fx-live canvas{opacity:1}
+/* Появление из расфокуса. Класс blur-in ставит скрипт — без него
+   фотография остаётся чёткой, поэтому при отключённом JS или в старом
+   браузере она не зависнет размытой. */
+.portrait img.blur-in{
+  filter:blur(16px) brightness(.85) contrast(.9);
+  transform:scale(1.04);
+  will-change:filter,transform;
+}
+.portrait img.blur-in.sharp{
+  filter:blur(0) brightness(1) contrast(1);
+  transform:scale(1);
+  transition:filter 1100ms cubic-bezier(.16,.84,.34,1),
+             transform 1100ms cubic-bezier(.16,.84,.34,1);
+}
 .cover .caption{
   font-size:12px;font-weight:200;letter-spacing:var(--track-label);
   text-transform:uppercase;color:var(--stone);margin-top:calc(var(--u)*6);
@@ -412,7 +422,6 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 <section class="dark cover" id="cover">
   <div class="inner cover-grid">
     <figure class="portrait reveal">
-      <canvas id="portraitCanvas" aria-hidden="true"></canvas>
       <img id="portraitSrc" src="tiskina-portrait-800.jpg"
            srcset="tiskina-portrait-500.jpg 500w, tiskina-portrait-800.jpg 800w, tiskina-portrait-1000.jpg 1000w"
            sizes="(max-width:720px) 74vw, 460px"
@@ -604,132 +613,40 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
   });
 
 
-  /* ---------- Портрет: сетка-мозаика под указателем ----------------------
-     Фотография остаётся обычным <img>. Canvas лежит поверх и включается
-     только на время касания или наведения — в покое его не видно вовсе,
-     поэтому никакой сбой отрисовки не может испортить сам кадр.
-     Клетка рядом с указателем берёт меньший кусок снимка и растягивает
-     его на всю свою площадь: получается зум, читающийся как крупный
-     пиксель. Дальше радиуса влияния зум равен единице — там мозаика
-     совпадает с фотографией пиксель в пиксель.
-     Указатель сглаживается экспоненциально: тот же характер, что даёт
-     gsap.quickTo с ease "expo", но без внешней библиотеки. */
-  (function portraitMosaic(){
-    var fig=document.querySelector('.portrait');
-    var cv=document.getElementById('portraitCanvas');
+  /* ---------- Портрет: появление из расфокуса при прокрутке -------------
+     Завязано только на попадание в зону видимости, никакой зависимости
+     от курсора или касания — поэтому ведёт себя одинаково на десктопе
+     и на телефоне. Размытие ставится скриптом: если он не отработал,
+     фотография просто остаётся чёткой. */
+  (function portraitReveal(){
     var img=document.getElementById('portraitSrc');
-    if(!fig||!cv||!img) return;
+    if(!img) return;
+    if(!('IntersectionObserver' in window)) return;   // остаётся чёткой
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    var ctx=cv.getContext('2d',{alpha:false});
-    var ZOOM=4.2;
-    var W=0,H=0,dpr=1,cols=0,rows=0,cw=0,ch=0,reach=0;
-    var px=0,py=0,tx=0,ty=0,pw=0,tw=0,raf=0,live=false;
-
-    function measure(){
-      var r=fig.getBoundingClientRect();
-      if(!r.width||!r.height) return false;
-      dpr=Math.min(window.devicePixelRatio||1,2);
-      W=r.width; H=r.height;
-      cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      ctx.imageSmoothingEnabled=true;
-      // сторона клетки от ширины кадра: на телефоне жёсткие 170px дали бы
-      // два столбца, и дробление читалось бы как обрезка, а не как приём
-      var box=Math.max(84,Math.min(170,W/2.7));
-      cols=Math.max(1,Math.round(W/box)); rows=Math.max(1,Math.round(H/box));
-      cw=W/cols; ch=H/rows;
-      // радиус влияния считается от клетки, а не от кадра: сетка мелкая
-      // (3×4), и при радиусе в долях ширины под зум попадали разом все
-      // клетки — фотография переставала возвращаться к нормальному виду
-      reach=Math.max(cw,ch)*1.35;
-      return true;
+    function sharpen(){
+      // два кадра: первый — чтобы браузер зафиксировал размытое состояние,
+      // второй — чтобы переход пошёл от него, а не сработал мгновенно
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ img.classList.add('sharp'); });
+      });
     }
 
-    function cover(){
-      var ir=img.naturalWidth/img.naturalHeight, br=W/H, sw,sh,sx,sy;
-      if(ir>br){ sh=img.naturalHeight; sw=sh*br; sx=(img.naturalWidth-sw)/2; sy=0; }
-      else     { sw=img.naturalWidth;  sh=sw/br; sx=0; sy=(img.naturalHeight-sh)/2; }
-      return {sx:sx,sy:sy,sw:sw,sh:sh};
-    }
+    img.classList.add('blur-in');
 
-    function draw(){
-      var c=cover();
-      ctx.fillStyle='#171717'; ctx.fillRect(0,0,W,H);
-      for(var j=0;j<rows;j++){
-        for(var i=0;i<cols;i++){
-          var x=i*cw, y=j*ch, mx=x+cw/2, my=y+ch/2;
-          var d=Math.hypot(mx-px,my-py);
-          var t=Math.max(0,1-d/reach)*pw;
-          var z=(t<0.02)?1:1+(ZOOM-1)*t*t;   // вдали — ровно единица
-          var sw=(cw/W)*c.sw/z, sh=(ch/H)*c.sh/z;
-          var scx=c.sx+(mx/W)*c.sw, scy=c.sy+(my/H)*c.sh;
-          ctx.drawImage(img,scx-sw/2,scy-sh/2,sw,sh,x,y,cw+0.6,ch+0.6);
-        }
-      }
-    }
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        io.unobserve(en.target);      // один раз, назад не отыгрывает
+        if(img.complete&&img.naturalWidth) sharpen();
+        else img.addEventListener('load',sharpen,{once:true});
+      });
+    },{threshold:0.35});
+    io.observe(img);
 
-    function show(on){
-      if(on===live) return;
-      live=on; fig.classList.toggle('fx-live',on);
-    }
-
-    function loop(){
-      px+=(tx-px)*0.14; py+=(ty-py)*0.14; pw+=(tw-pw)*0.10;
-      if(pw>0.004){ show(true); draw(); }
-      var moving=Math.abs(tx-px)>0.4||Math.abs(ty-py)>0.4||Math.abs(tw-pw)>0.004;
-      if(moving){ raf=requestAnimationFrame(loop); }
-      else{ raf=0; if(tw===0){ pw=0; show(false); } }
-    }
-    function kick(){ if(!raf) raf=requestAnimationFrame(loop); }
-
-    function at(e){
-      var r=fig.getBoundingClientRect();
-      tx=e.clientX-r.left; ty=e.clientY-r.top;
-    }
-    function engage(e){
-      if(!W&&!measure()) return;
-      at(e);
-      if(tw===0){ px=tx; py=ty; }      // без рывка из прошлой точки
-      tw=1; kick();
-    }
-    function release(){ tw=0; kick(); }
-
-    fig.addEventListener('pointermove',function(e){
-      if(e.pointerType==='mouse') engage(e);
-      else if(tw>0){ at(e); kick(); }
-    });
-    fig.addEventListener('pointerleave',function(e){
-      if(e.pointerType==='mouse') release();
-    });
-
-    // палец: ведём за касанием, прокрутку не перехватываем.
-    // touch-action:pan-y отдаёт вертикальный свайп странице,
-    // поэтому preventDefault не нужен и скролл не ломается
-    fig.addEventListener('pointerdown',function(e){
-      if(e.pointerType!=='mouse') engage(e);
-    },{passive:true});
-    ['pointerup','pointercancel','lostpointercapture'].forEach(function(ev){
-      fig.addEventListener(ev,function(e){
-        if(e.pointerType!=='mouse') release();
-      },{passive:true});
-    });
-    // страховка: палец отпущен вне фото или вкладка ушла в фон
-    window.addEventListener('pointerup',function(e){
-      if(e.pointerType!=='mouse') release();
-    },{passive:true});
-    document.addEventListener('visibilitychange',function(){
-      if(document.hidden) release();
-    });
-
-    if(img.complete&&img.naturalWidth) measure();
-    else img.addEventListener('load',measure,{once:true});
-
-    var rt;
-    window.addEventListener('resize',function(){
-      clearTimeout(rt);
-      rt=setTimeout(function(){ if(measure()&&live) draw(); },160);
-    });
+    // страховка: если картинка не загрузилась, размытие снимается,
+    // чтобы на месте портрета не осталось мутного пятна
+    img.addEventListener('error',function(){ img.classList.remove('blur-in'); });
   })();
 
   function fmt(n){return n.toLocaleString('ru-RU').replace(/ /g,' ');}

@@ -269,9 +269,8 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
   position:absolute;inset:0;width:100%;height:100%;display:block;
 }
 .portrait img{object-fit:cover}
-.portrait canvas{opacity:0;transition:opacity .35s ease;pointer-events:none}
-.portrait.fx-ready canvas{opacity:1}
-.portrait.fx-ready img{visibility:hidden}
+.portrait canvas{opacity:0;transition:opacity .28s ease;pointer-events:none}
+.portrait.fx-live canvas{opacity:1}
 .cover .caption{
   font-size:12px;font-weight:200;letter-spacing:var(--track-label);
   text-transform:uppercase;color:var(--stone);margin-top:calc(var(--u)*6);
@@ -603,12 +602,15 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
   });
 
 
-  /* ---------- Портрет: сетка-мозаика, следящая за курсором и пальцем ----
-     Каждая клетка рисует свой кусок фотографии. Рядом с указателем кусок
-     берётся меньше и растягивается на всю клетку — получается зум,
-     читающийся как крупный пиксель. Вдали зум равен единице, и клетка
-     совпадает с обычным изображением, поэтому стыков не видно.
-     Указатель сглаживается экспоненциально — тот же характер, что даёт
+  /* ---------- Портрет: сетка-мозаика под указателем ----------------------
+     Фотография остаётся обычным <img>. Canvas лежит поверх и включается
+     только на время касания или наведения — в покое его не видно вовсе,
+     поэтому никакой сбой отрисовки не может испортить сам кадр.
+     Клетка рядом с указателем берёт меньший кусок снимка и растягивает
+     его на всю свою площадь: получается зум, читающийся как крупный
+     пиксель. Дальше радиуса влияния зум равен единице — там мозаика
+     совпадает с фотографией пиксель в пиксель.
+     Указатель сглаживается экспоненциально: тот же характер, что даёт
      gsap.quickTo с ease "expo", но без внешней библиотеки. */
   (function portraitMosaic(){
     var fig=document.querySelector('.portrait');
@@ -618,24 +620,27 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     var ctx=cv.getContext('2d',{alpha:false});
-    var ZOOM=4.2, REACH=1.15;
-    var W=0,H=0,dpr=1,cols=0,rows=0,cw=0,ch=0,box=170;
-    var px=0,py=0,tx=0,ty=0;      // положение указателя: сглаженное и целевое
-    var s=0,ts=0;                 // сила эффекта: сглаженная и целевая
-    var raf=0;
+    var ZOOM=4.2;
+    var W=0,H=0,dpr=1,cols=0,rows=0,cw=0,ch=0,reach=0;
+    var px=0,py=0,tx=0,ty=0,pw=0,tw=0,raf=0,live=false;
 
     function measure(){
       var r=fig.getBoundingClientRect();
-      if(!r.width) return false;
+      if(!r.width||!r.height) return false;
       dpr=Math.min(window.devicePixelRatio||1,2);
       W=r.width; H=r.height;
       cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
       ctx.setTransform(dpr,0,0,dpr,0,0);
-      // клетка подстраивается под ширину: на телефоне 170px дали бы два
-      // столбца — дробление читалось бы как обрезка, а не как приём
-      box=Math.max(84,Math.min(170,W/2.7));
+      ctx.imageSmoothingEnabled=true;
+      // сторона клетки от ширины кадра: на телефоне жёсткие 170px дали бы
+      // два столбца, и дробление читалось бы как обрезка, а не как приём
+      var box=Math.max(84,Math.min(170,W/2.7));
       cols=Math.max(1,Math.round(W/box)); rows=Math.max(1,Math.round(H/box));
       cw=W/cols; ch=H/rows;
+      // радиус влияния считается от клетки, а не от кадра: сетка мелкая
+      // (3×4), и при радиусе в долях ширины под зум попадали разом все
+      // клетки — фотография переставала возвращаться к нормальному виду
+      reach=Math.max(cw,ch)*1.35;
       return true;
     }
 
@@ -647,27 +652,32 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
     }
 
     function draw(){
-      var c=cover(), reach=W*REACH;
+      var c=cover();
       ctx.fillStyle='#171717'; ctx.fillRect(0,0,W,H);
       for(var j=0;j<rows;j++){
         for(var i=0;i<cols;i++){
           var x=i*cw, y=j*ch, mx=x+cw/2, my=y+ch/2;
           var d=Math.hypot(mx-px,my-py);
-          var t=Math.max(0,1-d/reach)*s;
-          var z=1+(ZOOM-1)*t*t;
+          var t=Math.max(0,1-d/reach)*pw;
+          var z=(t<0.02)?1:1+(ZOOM-1)*t*t;   // вдали — ровно единица
           var sw=(cw/W)*c.sw/z, sh=(ch/H)*c.sh/z;
           var scx=c.sx+(mx/W)*c.sw, scy=c.sy+(my/H)*c.sh;
-          ctx.drawImage(img,scx-sw/2,scy-sh/2,sw,sh,x,y,cw+0.5,ch+0.5);
+          ctx.drawImage(img,scx-sw/2,scy-sh/2,sw,sh,x,y,cw+0.6,ch+0.6);
         }
       }
     }
 
+    function show(on){
+      if(on===live) return;
+      live=on; fig.classList.toggle('fx-live',on);
+    }
+
     function loop(){
-      px+=(tx-px)*0.14; py+=(ty-py)*0.14; s+=(ts-s)*0.10;
-      draw();
-      var moving=Math.abs(tx-px)>0.4||Math.abs(ty-py)>0.4||Math.abs(ts-s)>0.004;
-      raf=moving?requestAnimationFrame(loop):0;
-      if(!moving&&ts===0&&s<0.01){ s=0; draw(); }
+      px+=(tx-px)*0.14; py+=(ty-py)*0.14; pw+=(tw-pw)*0.10;
+      if(pw>0.004){ show(true); draw(); }
+      var moving=Math.abs(tx-px)>0.4||Math.abs(ty-py)>0.4||Math.abs(tw-pw)>0.004;
+      if(moving){ raf=requestAnimationFrame(loop); }
+      else{ raf=0; if(tw===0){ pw=0; show(false); } }
     }
     function kick(){ if(!raf) raf=requestAnimationFrame(loop); }
 
@@ -676,43 +686,47 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
       tx=e.clientX-r.left; ty=e.clientY-r.top;
     }
     function engage(e){
+      if(!W&&!measure()) return;
       at(e);
-      if(ts===0){ px=tx; py=ty; }   // без рывка из прошлой точки
-      ts=1; kick();
+      if(tw===0){ px=tx; py=ty; }      // без рывка из прошлой точки
+      tw=1; kick();
     }
-    function release(){ ts=0; kick(); }
+    function release(){ tw=0; kick(); }
 
-    // мышь: эффект живёт, пока курсор над фото
     fig.addEventListener('pointermove',function(e){
-      if(e.pointerType==='mouse') engage(e); else if(ts>0){ at(e); kick(); }
+      if(e.pointerType==='mouse') engage(e);
+      else if(tw>0){ at(e); kick(); }
     });
     fig.addEventListener('pointerleave',function(e){
       if(e.pointerType==='mouse') release();
     });
 
     // палец: ведём за касанием, прокрутку не перехватываем.
-    // touch-action:pan-y в CSS оставляет вертикальный свайп странице,
+    // touch-action:pan-y отдаёт вертикальный свайп странице,
     // поэтому preventDefault не нужен и скролл не ломается
     fig.addEventListener('pointerdown',function(e){
       if(e.pointerType!=='mouse') engage(e);
     },{passive:true});
-    fig.addEventListener('pointerup',function(e){
+    ['pointerup','pointercancel','lostpointercapture'].forEach(function(ev){
+      fig.addEventListener(ev,function(e){
+        if(e.pointerType!=='mouse') release();
+      },{passive:true});
+    });
+    // страховка: палец отпущен вне фото или вкладка ушла в фон
+    window.addEventListener('pointerup',function(e){
       if(e.pointerType!=='mouse') release();
     },{passive:true});
-    fig.addEventListener('pointercancel',function(e){
-      if(e.pointerType!=='mouse') release();
-    },{passive:true});
+    document.addEventListener('visibilitychange',function(){
+      if(document.hidden) release();
+    });
 
-    function start(){
-      if(!measure()) return;
-      draw(); fig.classList.add('fx-ready');
-    }
-    if(img.complete&&img.naturalWidth) start();
-    else img.addEventListener('load',start,{once:true});
+    if(img.complete&&img.naturalWidth) measure();
+    else img.addEventListener('load',measure,{once:true});
 
     var rt;
     window.addEventListener('resize',function(){
-      clearTimeout(rt); rt=setTimeout(function(){ if(measure()) draw(); },160);
+      clearTimeout(rt);
+      rt=setTimeout(function(){ if(measure()&&live) draw(); },160);
     });
   })();
 

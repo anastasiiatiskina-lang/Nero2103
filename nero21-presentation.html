@@ -265,24 +265,17 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 .portrait{position:relative;width:100%;max-width:460px;aspect-ratio:2/3;
   overflow:hidden;background:#171717;
   -webkit-tap-highlight-color:transparent}
-.portrait img{
+.portrait img,.portrait canvas{
   position:absolute;inset:0;width:100%;height:100%;display:block;
-  object-fit:cover;
 }
-/* Появление из расфокуса. Класс blur-in ставит скрипт — без него
-   фотография остаётся чёткой, поэтому при отключённом JS или в старом
-   браузере она не зависнет размытой. */
-.portrait img.blur-in{
-  filter:blur(16px) brightness(.85) contrast(.9);
-  transform:scale(1.04);
-  will-change:filter,transform;
-}
-.portrait img.blur-in.sharp{
-  filter:blur(0) brightness(1) contrast(1);
-  transform:scale(1);
-  transition:filter 1100ms cubic-bezier(.16,.84,.34,1),
-             transform 1100ms cubic-bezier(.16,.84,.34,1);
-}
+.portrait img{object-fit:cover;z-index:0}
+/* Холст лежит НАД фотографией: в разметке он идёт первым, без z-index
+   картинка перекрывала бы его. Показывается только пока идёт сборка
+   мозаики — класс ставит скрипт. Не отработал скрипт, нет поддержки,
+   отключён JS — под холстом всегда лежит обычное фото. */
+.portrait canvas{z-index:1;opacity:0;pointer-events:none}
+.portrait.mosaic canvas{opacity:1}
+.portrait.mosaic-done canvas{opacity:0;transition:opacity 320ms ease}
 .cover .caption{
   font-size:12px;font-weight:200;letter-spacing:var(--track-label);
   text-transform:uppercase;color:var(--stone);margin-top:calc(var(--u)*6);
@@ -422,6 +415,7 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 <section class="dark cover" id="cover">
   <div class="inner cover-grid">
     <figure class="portrait reveal">
+      <canvas id="portraitCanvas" aria-hidden="true"></canvas>
       <img id="portraitSrc" src="tiskina-portrait-800.jpg"
            srcset="tiskina-portrait-500.jpg 500w, tiskina-portrait-800.jpg 800w, tiskina-portrait-1000.jpg 1000w"
            sizes="(max-width:720px) 74vw, 460px"
@@ -613,40 +607,125 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
   });
 
 
-  /* ---------- Портрет: появление из расфокуса при прокрутке -------------
-     Завязано только на попадание в зону видимости, никакой зависимости
-     от курсора или касания — поэтому ведёт себя одинаково на десктопе
-     и на телефоне. Размытие ставится скриптом: если он не отработал,
-     фотография просто остаётся чёткой. */
-  (function portraitReveal(){
+  /* ---------- Портрет: сборка мозаики при прокрутке ---------------------
+     Сетка боксов и зум фрагмента остались прежними: чем меньше кусок
+     снимка, взятый в клетку, тем крупнее «пиксель»; кусок размером
+     в клетку даёт чёткое изображение.
+     Изменился источник: вместо позиции курсора — расстояние клетки от
+     геометрического центра кадра и общий прогресс 0→1. Центральные
+     клетки собираются раньше, крайние с задержкой, получается
+     радиальная волна от центра наружу.
+     Прогресс запускается один раз при входе портрета в зону видимости
+     и дальше не зависит ни от курсора, ни от касания — поэтому на
+     телефоне работает ровно так же, как на десктопе. */
+  (function portraitMosaic(){
+    var fig=document.querySelector('.portrait');
+    var cv=document.getElementById('portraitCanvas');
     var img=document.getElementById('portraitSrc');
-    if(!img) return;
-    if(!('IntersectionObserver' in window)) return;   // остаётся чёткой
+    if(!fig||!cv||!img) return;
+    if(!('IntersectionObserver' in window)) return;   // остаётся обычное фото
     if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    function sharpen(){
-      // два кадра: первый — чтобы браузер зафиксировал размытое состояние,
-      // второй — чтобы переход пошёл от него, а не сработал мгновенно
-      requestAnimationFrame(function(){
-        requestAnimationFrame(function(){ img.classList.add('sharp'); });
-      });
+    var ctx=cv.getContext('2d',{alpha:false});
+    var ZOOM=16;          // зум клетки в начальном состоянии — плотная мозаика
+    var STAGGER=0.22;     // насколько край отстаёт от центра
+    var DURATION=1500;    // мс, длительность сборки
+    var W=0,H=0,dpr=1,cols=0,rows=0,cw=0,ch=0,boxes=[],started=false;
+
+    function measure(){
+      var r=fig.getBoundingClientRect();
+      if(!r.width||!r.height||!img.naturalWidth) return false;
+      dpr=Math.min(window.devicePixelRatio||1,2);
+      W=r.width; H=r.height;
+      cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      // клетка от ширины кадра, не фиксированная: на телефоне жёсткий
+      // размер дал бы два столбца, и мозаика читалась бы как обрезка
+      var box=Math.max(70,Math.min(150,W/4));
+      cols=Math.max(2,Math.round(W/box)); rows=Math.max(2,Math.round(H/box));
+      cw=W/cols; ch=H/rows;
+
+      // кадрирование как object-fit: cover
+      var ir=img.naturalWidth/img.naturalHeight, br=W/H, sw,sh,sx,sy;
+      if(ir>br){ sh=img.naturalHeight; sw=sh*br; sx=(img.naturalWidth-sw)/2; sy=0; }
+      else     { sw=img.naturalWidth;  sh=sw/br; sx=0; sy=(img.naturalHeight-sh)/2; }
+
+      // сетка боксов: у каждого своя доля кадра и расстояние от центра
+      var ccx=W/2, ccy=H/2, maxd=Math.hypot(ccx,ccy);
+      boxes=[];
+      for(var j=0;j<rows;j++){
+        for(var i=0;i<cols;i++){
+          var x=i*cw, y=j*ch, mx=x+cw/2, my=y+ch/2;
+          boxes.push({
+            x:x, y:y,
+            scx:sx+(mx/W)*sw, scy:sy+(my/H)*sh,   // центр куска в исходнике
+            sw:(cw/W)*sw, sh:(ch/H)*sh,           // размер куска при зуме 1
+            d:Math.hypot(mx-ccx,my-ccy)/maxd      // 0 в центре, 1 по углам
+          });
+        }
+      }
+      return true;
     }
 
-    img.classList.add('blur-in');
+    // тот же принцип, что раньше давала дистанция до курсора:
+    // s = 0 — клетка максимально «зумлена», s = 1 — совпадает с фото
+    function drawImg(progress){
+      ctx.fillStyle='#171717'; ctx.fillRect(0,0,W,H);
+      for(var k=0;k<boxes.length;k++){
+        var b=boxes[k];
+        var t=(progress-STAGGER*b.d)/(1-STAGGER);   // сдвиг для дальних клеток
+        var c={s:t<0?0:t>1?1:t};
+        var e=1-Math.pow(1-c.s,3);                  // ease-out внутри клетки
+        var z=1+(ZOOM-1)*(1-e);
+        var sw=b.sw/z, sh=b.sh/z;
+        ctx.drawImage(img,b.scx-sw/2,b.scy-sh/2,sw,sh,b.x,b.y,cw+0.6,ch+0.6);
+      }
+    }
 
-    var io=new IntersectionObserver(function(entries){
-      entries.forEach(function(en){
-        if(!en.isIntersecting) return;
-        io.unobserve(en.target);      // один раз, назад не отыгрывает
-        if(img.complete&&img.naturalWidth) sharpen();
-        else img.addEventListener('load',sharpen,{once:true});
-      });
-    },{threshold:0.35});
-    io.observe(img);
+    function run(){
+      if(started||!measure()) return;
+      started=true;
+      fig.classList.add('mosaic');
+      drawImg(0);
+      var t0=0;
+      function frame(now){
+        if(!t0) t0=now;
+        var p=Math.min((now-t0)/DURATION,1);
+        // общий прогресс идёт ровно: сглаживание уже заложено внутри
+        // клетки, второе поверх него съедало бы почти всю волну
+        drawImg(p);
+        if(p<1) requestAnimationFrame(frame);
+        else fig.classList.add('mosaic-done');    // холст гаснет, под ним фото
+      }
+      requestAnimationFrame(frame);
+    }
 
-    // страховка: если картинка не загрузилась, размытие снимается,
-    // чтобы на месте портрета не осталось мутного пятна
-    img.addEventListener('error',function(){ img.classList.remove('blur-in'); });
+    function arm(){
+      if(!measure()) return;
+      fig.classList.add('mosaic');
+      drawImg(0);                                  // до входа — полная мозаика
+      var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(!en.isIntersecting) return;
+          io.unobserve(en.target);                 // один раз, назад не отыгрывает
+          run();
+        });
+      },{threshold:0.35});
+      io.observe(fig);
+    }
+
+    if(img.complete&&img.naturalWidth) arm();
+    else img.addEventListener('load',arm,{once:true});
+    img.addEventListener('error',function(){ fig.classList.remove('mosaic'); });
+
+    var rt;
+    window.addEventListener('resize',function(){
+      clearTimeout(rt);
+      rt=setTimeout(function(){
+        if(!started||!measure()) return;
+        drawImg(1);                                // после сборки просто пересобрать
+      },160);
+    });
   })();
 
   function fmt(n){return n.toLocaleString('ru-RU').replace(/ /g,' ');}

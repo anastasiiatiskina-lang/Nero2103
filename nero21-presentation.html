@@ -268,8 +268,10 @@ section.dark .btn-ghost:hover{background:var(--paper);color:var(--ink)}
 .portrait img,.portrait canvas{
   position:absolute;inset:0;width:100%;height:100%;display:block;
 }
-.portrait img{object-fit:cover}
-.portrait canvas{opacity:0;transition:opacity .28s ease;pointer-events:none}
+.portrait img{object-fit:cover;z-index:0}
+/* холст лежит НАД фотографией и всплывает только на время взаимодействия:
+   в разметке он идёт первым, без z-index картинка перекрывала бы его */
+.portrait canvas{z-index:1;opacity:0;transition:opacity .28s ease;pointer-events:none}
 .portrait.fx-live canvas{opacity:1}
 .cover .caption{
   font-size:12px;font-weight:200;letter-spacing:var(--track-label);

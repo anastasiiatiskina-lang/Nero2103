@@ -339,6 +339,50 @@ img{display:block;max-width:100%;height:auto}
 }
 
 
+/* ---- мобильная перестройка блоков ---- */
+.crumb-back{display:none;max-width:1400px;margin:0 auto;padding:16px 18px 0}
+.crumb-back a{font-family:var(--sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);text-decoration:none}
+.crumb-back a:hover{color:var(--ink)}
+
+/* заголовки аккордеона создаёт скрипт; на десктопе они не нужны */
+.acc-head{display:none;width:100%;align-items:center;justify-content:space-between;gap:14px;
+  background:none;border:0;border-top:1px solid var(--line);padding:18px 0;cursor:pointer;text-align:left;
+  font-family:var(--sans);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink)}
+.acc-head .acc-arw{flex:0 0 auto;width:10px;height:10px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform var(--dur) var(--ease)}
+.acc-head[aria-expanded="true"] .acc-arw{transform:rotate(225deg) translate(-2px,-2px)}
+
+/* таблица размеров: если не влезает — прокручивается сама, а не рвёт страницу */
+.sz-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.sz{min-width:340px}
+
+@media(max-width:720px){
+  .crumbs{display:none}
+  .crumb-back{display:block}
+
+  /* цена только в липкой строке внизу */
+  .buy .p-price{display:none}
+
+  /* вкладки -> аккордеон */
+  .tabs-nav{display:none}
+  .acc-head{display:flex}
+  .tabs-body{padding-top:0}
+  .tabs-body>[role="tabpanel"]{padding:4px 0 22px}
+  .tabs-body>[role="tabpanel"]:last-of-type{border-bottom:1px solid var(--line)}
+
+  /* «С этим носят» — лента с прокруткой, край следующей карточки виден */
+  .sec .cat-grid{display:flex;grid-template-columns:none;gap:12px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;
+    scrollbar-width:none;padding-bottom:4px}
+  .sec .cat-grid::-webkit-scrollbar{display:none}
+  .sec .cat-grid .cat{flex:0 0 78%;scroll-snap-align:start}
+  .sec .cat:hover{transform:none}
+}
+@media(max-width:380px){
+  .buy-bar .btn-filled{font-size:9.5px;letter-spacing:.14em;padding:15px 10px}
+  .buy-bar .bb-price{font-size:16px}
+}
+
 /* ---- галерея: крупный кадр + лента миниатюр ---- */
 .gal{display:flex;flex-direction:column;gap:12px}
 .gal-main{position:relative;background:#F5F1EB;aspect-ratio:3/4;overflow:hidden}
@@ -381,6 +425,7 @@ img{display:block;max-width:100%;height:auto}
 <nav class="crumbs" aria-label="Хлебные крошки">
   <a href="/">Главная</a><i>/</i><a href="#">Каталог</a><i>/</i><a href="#">Трусы</a><i>/</i><span>Галочка Бразильяно Тирамису</span>
 </nav>
+<nav class="crumb-back" aria-label="Назад в раздел"><a href="#">&larr; Трусы</a></nav>
 
 <main class="pdp">
 
@@ -467,6 +512,7 @@ img{display:block;max-width:100%;height:auto}
     </div>
     <div role="tabpanel" id="pane-sizes" aria-labelledby="t-sizes" hidden>
       <p>Трусики бразильяно галочка</p>
+      <div class="sz-wrap">
       <table class="sz">
         <thead><tr><th></th><th>Обхват талии, см</th><th>Обхват бедер, см</th></tr></thead>
         <tbody>
@@ -474,6 +520,7 @@ img{display:block;max-width:100%;height:auto}
           <tr><td>M/L</td><td>72–75</td><td>99–102</td></tr>
         </tbody>
       </table>
+      </div>
     </div>
     <div role="tabpanel" id="pane-ship" aria-labelledby="t-ship" hidden>
       <ul class="ship-links">
@@ -654,15 +701,57 @@ img{display:block;max-width:100%;height:auto}
     fav.querySelector('span').textContent=on?'В избранное':'В избранном';
   });
 
-  var tabs=document.querySelectorAll('.tabs-nav button');
-  function tab(id){
-    tabs.forEach(function(t){
-      var on=t.id===id;
-      t.setAttribute('aria-selected',on?'true':'false');
-      document.getElementById(t.getAttribute('aria-controls')).hidden=!on;
-    });
+  /* Вкладки на десктопе и аккордеон на телефоне — одна разметка.
+     Заголовки аккордеона создаются из подписей вкладок и вставляются
+     перед соответствующими панелями, поэтому текст не дублируется в HTML. */
+  var tabs=[].slice.call(document.querySelectorAll('.tabs-nav button'));
+  var panes=tabs.map(function(t){ return document.getElementById(t.getAttribute('aria-controls')); });
+  var heads=tabs.map(function(t,i){
+    var h=document.createElement('button');
+    h.type='button'; h.className='acc-head';
+    h.setAttribute('aria-controls', t.getAttribute('aria-controls'));
+    h.setAttribute('aria-expanded', i===0?'true':'false');
+    h.innerHTML='<span>'+t.textContent+'</span><span class="acc-arw" aria-hidden="true"></span>';
+    panes[i].parentNode.insertBefore(h, panes[i]);
+    return h;
+  });
+
+  var narrow=window.matchMedia('(max-width:720px)');
+
+  function apply(openIndex){
+    if(narrow.matches){
+      panes.forEach(function(p,i){
+        var on=i===openIndex;
+        p.hidden=!on;
+        heads[i].setAttribute('aria-expanded', on?'true':'false');
+      });
+    }else{
+      panes.forEach(function(p,i){
+        var on=i===openIndex;
+        p.hidden=!on;
+        tabs[i].setAttribute('aria-selected', on?'true':'false');
+      });
+    }
   }
-  tabs.forEach(function(t){ t.addEventListener('click',function(){ tab(t.id); }); });
+  var current=0;
+  apply(0);
+
+  tabs.forEach(function(t,i){ t.addEventListener('click',function(){ current=i; apply(i); }); });
+  heads.forEach(function(h,i){
+    h.addEventListener('click',function(){
+      // повторный клик по открытому разделу сворачивает его
+      current = (narrow.matches && current===i) ? -1 : i;
+      apply(current);
+    });
+  });
+  (narrow.addEventListener?narrow.addEventListener.bind(narrow,'change'):narrow.addListener.bind(narrow))(function(){
+    if(current<0) current=0;
+    apply(current);
+  });
+  function tab(id){
+    var i=tabs.map(function(t){return t.id;}).indexOf(id);
+    if(i>=0){ current=i; apply(i); }
+  }
 
   document.querySelectorAll('#addBtn,[data-add]').forEach(function(b){
     b.addEventListener('click',function(){

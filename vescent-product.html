@@ -303,6 +303,10 @@ img{display:block;max-width:100%;height:auto}
 .sz{border-collapse:collapse;width:100%;max-width:520px;margin-top:18px;font-family:var(--sans);font-size:14px;color:var(--ink)}
 .sz th,.sz td{border:1px solid var(--line);padding:12px 14px;text-align:left;font-weight:400}
 .sz th{color:var(--dim);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+.ship-links{list-style:none;margin:0;padding:0}
+.ship-links li{margin-bottom:14px}
+.ship-links a{font-family:var(--serif);font-variation-settings:"opsz" 24;font-weight:400;font-size:17px;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line);padding-bottom:2px;transition:border-color var(--dur) var(--ease)}
+.ship-links a:hover{border-color:var(--ink)}
 
 /* липкая кнопка на мобильном */
 .buy-bar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;gap:12px;align-items:center;padding:12px 18px calc(12px + env(safe-area-inset-bottom));background:var(--bg);border-top:1px solid var(--line)}
@@ -429,9 +433,7 @@ img{display:block;max-width:100%;height:auto}
       </button>
     </div>
 
-    <div class="p-ship">
-      <a href="https://vescent.ru/service#delivery" target="_blank" rel="noopener">Доставка</a> и оплата
-    </div>
+
   </div>
 
 </main>
@@ -441,6 +443,7 @@ img{display:block;max-width:100%;height:auto}
     <button type="button" role="tab" id="t-desc"  aria-controls="pane-desc"  aria-selected="true">Описание</button>
     <button type="button" role="tab" id="t-care"  aria-controls="pane-care"  aria-selected="false">Состав и уход</button>
     <button type="button" role="tab" id="t-sizes" aria-controls="pane-sizes" aria-selected="false">Размеры и посадка</button>
+    <button type="button" role="tab" id="t-ship" aria-controls="pane-ship" aria-selected="false">Доставка и оплата</button>
   </div>
   <div class="tabs-body">
     <div role="tabpanel" id="pane-desc" aria-labelledby="t-desc">
@@ -473,7 +476,12 @@ img{display:block;max-width:100%;height:auto}
         </tbody>
       </table>
     </div>
-  </div>
+    <div role="tabpanel" id="pane-ship" aria-labelledby="t-ship" hidden>
+      <ul class="ship-links">
+        <li><a href="https://vescent.ru/service#delivery" target="_blank" rel="noopener">Доставка</a></li>
+        <li><a href="https://vescent.ru/service#pay" target="_blank" rel="noopener">Оплата</a></li>
+      </ul>
+    </div>  </div>
 </section>
 
 <section class="sec">
